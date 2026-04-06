@@ -45,12 +45,8 @@ public_users.get("/isbn/:isbn", async (req, res) => {
 
   try {
     const book = books[isbn];
-
-    if (book) {
-      res.status(200).json(book);
-    } else {
-      res.status(404).json({ message: "Book not found" });
-    }
+    if (book) res.status(200).json(book);
+    else res.status(404).json({ message: "Book not found" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error fetching book details" });
@@ -83,11 +79,8 @@ public_users.get("/author/:author", async (req, res) => {
       if (books[key].author === author) filteredBooks[key] = books[key];
     });
 
-    if (Object.keys(filteredBooks).length > 0) {
-      res.status(200).json(filteredBooks);
-    } else {
-      res.status(404).json({ message: "No books found for this author" });
-    }
+    if (Object.keys(filteredBooks).length > 0) res.status(200).json(filteredBooks);
+    else res.status(404).json({ message: "No books found for this author" });
   } catch (error) {
     res.status(500).json({ message: "Error fetching books" });
   }
@@ -113,7 +106,7 @@ public_users.get("/author-promise/:author", (req, res) => {
 });
 
 // ----------------------
-// Get book details by title
+// Get book details by title (async/await)
 // ----------------------
 public_users.get("/title/:title", async (req, res) => {
   const title = req.params.title;
@@ -123,14 +116,30 @@ public_users.get("/title/:title", async (req, res) => {
       if (books[key].title === title) filteredBooks[key] = books[key];
     });
 
-    if (Object.keys(filteredBooks).length > 0) {
-      res.status(200).json(filteredBooks);
-    } else {
-      res.status(404).json({ message: "No books found with this title" });
-    }
+    if (Object.keys(filteredBooks).length > 0) res.status(200).json(filteredBooks);
+    else res.status(404).json({ message: "No books found with this title" });
   } catch (error) {
     res.status(500).json({ message: "Error fetching books" });
   }
+});
+
+// ----------------------
+// Get book details by title (Promise callback)
+// ----------------------
+public_users.get("/title-promise/:title", (req, res) => {
+  const title = req.params.title;
+
+  new Promise((resolve, reject) => {
+    const filteredBooks = {};
+    Object.keys(books).forEach(key => {
+      if (books[key].title === title) filteredBooks[key] = books[key];
+    });
+
+    if (Object.keys(filteredBooks).length > 0) resolve(filteredBooks);
+    else reject(new Error("No books found with this title"));
+  })
+  .then(filteredBooks => res.status(200).json(filteredBooks))
+  .catch(error => res.status(404).json({ message: error.message }));
 });
 
 // ----------------------
@@ -140,10 +149,7 @@ public_users.get("/review/:isbn", (req, res) => {
   const isbn = req.params.isbn;
   const book = books[isbn];
 
-  if (!book) {
-    return res.status(404).json({ message: "Book not found" });
-  }
-
+  if (!book) return res.status(404).json({ message: "Book not found" });
   if (!book.reviews || Object.keys(book.reviews).length === 0) {
     return res.status(200).json({ message: "No reviews available for this book" });
   }
